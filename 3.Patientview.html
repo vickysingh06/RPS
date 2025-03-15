@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Admissions</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .btn-container { margin-bottom: 15px; }
+        button {
+            padding: 10px 15px;
+            margin-right: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        .btn-dashboard { background-color: #28a745; color: white; }
+        .btn-refresh { background-color: #007BFF; color: white; }
+        button:hover { opacity: 0.8; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #007BFF; color: white; }
+    </style>
+</head>
+<body>
+
+    <h2>Patient Admissions</h2>
+
+    <!-- Buttons -->
+    <div class="btn-container">
+        <button class="btn-dashboard" onclick="returnToDashboard()">Return to Dashboard</button>
+        <button class="btn-refresh" onclick="fetchPatientAdmissions()">Refresh Data</button>
+    </div>
+
+    <table id="patientTable">
+        <thead>
+            <tr>
+                <th>Patient ID</th>
+                <th>Name</th>
+                <th>Date of Referral</th>
+                <th>Referral Type</th>
+                <th>Unique ID 1</th>
+                <th>Unique ID 2</th>
+                <th>Unique ID 3</th>
+                <th>Date of Admission</th>
+                <th>Status of Admission</th>
+                <th>Department</th>
+                <th>Admitted To</th>
+                <th>Type of Admission</th>
+                <th>Type of Test</th>
+                <th>Bill Amount</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        // Function to redirect to the dashboard
+        function returnToDashboard() {
+            window.location.href = "2. dashboard.html"; // Change this to your actual dashboard page
+        }
+
+        // Function to format date correctly (DD/MM/YYYY)
+        function formatDate(dateString) {
+            if (!dateString || dateString === "Not Updated") return "Not Updated";
+            const parsedDate = Date.parse(dateString);
+            if (isNaN(parsedDate)) return "Invalid Date";
+            const date = new Date(parsedDate);
+            return date.toLocaleDateString("en-GB"); // Formats as DD/MM/YYYY
+        }
+
+        // Fetch patient admissions and populate table
+        async function fetchPatientAdmissions() {
+            try {
+                const response = await fetch("http://localhost:5001/patient-admissions");
+                const patients = await response.json();
+
+                const tableBody = document.querySelector("#patientTable tbody");
+                tableBody.innerHTML = "";
+
+                patients.forEach(patient => {
+                    const row = `<tr>
+                        <td>${patient.PatientID}</td>
+                        <td>${patient.Name}</td>
+                        <td>${formatDate(patient.DateOfReferral)}</td>
+                        <td>${patient.ReferralType}</td>
+                        <td>${patient.UniqueID1}</td>
+                        <td>${patient.UniqueID2 || "-"}</td>
+                        <td>${patient.UniqueID3 || "-"}</td>
+                        <td>${formatDate(patient.DateOfAdmission)}</td>
+                        <td>${patient.StatusOfAdmission || "Not Updated"}</td>
+                        <td>${patient.Department || "Not Updated"}</td>
+                        <td>${patient.AdmittedTo || "Not Updated"}</td>
+                        <td>${patient.TypeOfAdmission || "Not Updated"}</td>
+                        <td>${patient.TypeOfTest || "Not Updated"}</td>
+                        <td>${patient.BillAmount || "Not Updated"}</td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
+
+            } catch (error) {
+                console.error("Error fetching patient admission data:", error);
+            }
+        }
+
+        fetchPatientAdmissions();
+    </script>
+
+</body>
+</html>

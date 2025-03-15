@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status of Patient</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            width: 50%;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+            text-align: left;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .submit-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+        #otherTest {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Status of Patient</h2>
+        <form id="statusOfPatient">
+
+            <label>Patient ID (as per sheet) (SOP) *</label>
+            <input type="number" id="patient_id" required>
+
+            <label>Admitted To *</label>
+            <select id="hospital" required>
+                <option value="">Select Hospital</option>
+                <option value="Asarfi Hospital Dhanbad">Asarfi Hospital Dhanbad</option>
+                <option value="Asarfi Hospital Ballia">Asarfi Hospital Ballia</option>
+                <option value="Asarfi Cancer Institute">Asarfi Cancer Institute</option>
+            </select>
+
+            <label>Department *</label>
+            <select id="department" required>
+                <option value="">Select Department</option>
+                <option value="PET SCAN OPD">PET SCAN OPD</option>
+                <option value="Radiotherapy OPD">Radiotherapy OPD</option>
+                <option value="Chemotherapy OPD">Chemotherapy OPD</option>
+                <option value="Anesthesiology">Anesthesiology</option>
+                <option value="Burn Management">Burn Management</option>
+                <option value="Cardio Thoracic Surgery">Cardio Thoracic Surgery</option>
+                <option value="Cardiology">Cardiology</option>
+                <option value="Critical Care">Critical Care</option>
+                <option value="Dental">Dental</option>
+                <option value="Dietitian">Dietitian</option>
+                <option value="Emergency Medicine">Emergency Medicine</option>
+                <option value="ENT">ENT</option>
+                <option value="Gastroenterology">Gastroenterology</option>
+                <option value="General Surgery">General Surgery</option>
+                <option value="Haemato Oncology">Haemato Oncology</option>
+                <option value="Haematology">Haematology</option>
+                <option value="Head and Neck Surgery">Head and Neck Surgery</option>
+                <option value="Medical Oncology">Medical Oncology</option>
+                <option value="Medicine/Physician">Medicine/Physician</option>
+                <option value="Nephrology">Nephrology</option>
+                <option value="Neurology">Neurology</option>
+                <option value="Obs and Gynecology">Obs and Gynecology</option>
+                <option value="Old Age Services">Old Age Services</option>
+                <option value="Orthopedics">Orthopedics</option>
+                <option value="Pathology">Pathology</option>
+                <option value="Pediatric Oncology">Pediatric Oncology</option>
+                <option value="Pediatric Surgery">Pediatric Surgery</option>
+                <option value="Pediatric and Neonatal">Pediatric and Neonatal</option>
+                <option value="Physiotherapy">Physiotherapy</option>
+                <option value="Plastic Surgery">Plastic Surgery</option>
+                <option value="Radiology">Radiology</option>
+                <option value="Rheumatology">Rheumatology</option>
+                <option value="Surgical Oncology">Surgical Oncology</option>
+                <option value="Urology">Urology</option>
+                <option value="Onco Pathology">Onco Pathology</option>
+                <option value="Pulmonology">Pulmonology</option>
+            </select>
+
+            <label>Type of Admission *</label>
+            <select id="admission_type" required>
+                <option value="">Select Type</option>
+                <option value="Cash">Cash</option>
+                <option value="TPA">TPA</option>
+                <option value="Ayushmann Bharat">Ayushmann Bharat</option>
+                <option value="MGBUY">MGBUY</option>
+                <option value="BCCL General">BCCL General</option>
+                <option value="BCCL Corporate">BCCL Corporate</option>
+                <option value="CCL Corporate">CCL Corporate</option>
+                <option value="ECL Corporate">ECL Corporate</option>
+                <option value="ECR Corporate">ECR Corporate</option>
+                <option value="SER Corporate">SER Corporate</option>
+                <option value="ISM Corporate">ISM Corporate</option>
+                <option value="ACC Corporate">ACC Corporate</option>
+                <option value="CGHS Corporate">CGHS Corporate</option>
+                <option value="ESI Corporate">ESI Corporate</option>
+            </select>
+
+            <label>Type of Test *</label>
+            <select id="test_type" onchange="toggleOtherTest()" required>
+                <option value="">Select Test</option>
+                <option value="PET Scan OPD">PET Scan OPD</option>
+                <option value="Radiotherapy OPD">Radiotherapy OPD</option>
+                <option value="MRI">MRI</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <input type="text" id="otherTest" placeholder="Enter Other Test Type">
+
+            <label>Bill Amount *</label>
+            <input type="number" id="bill_amount" required>
+
+            <button type="submit" class="submit-btn">Submit</button>
+        </form>
+    </div>
+
+
+ <script>
+   document.getElementById("statusOfPatient").addEventListener("submit", function(event) {
+    event.preventDefault(); // Prevent page refresh
+
+    let formData = {
+        patient_id: document.getElementById("patient_id").value,
+        admitted_to: document.getElementById("hospital").value, // Fixed ID
+        department: document.getElementById("department").value,
+        type_admission: document.getElementById("admission_type").value, // Fixed ID
+        type_test: document.getElementById("test_type").value, // Fixed ID
+        bill_amount: document.getElementById("bill_amount").value,
+    };
+
+    // If "Other" is selected in Test Type, get the entered value
+    if (formData.type_test === "Other") {
+        formData.type_test = document.getElementById("otherTest").value;
+    }
+
+    fetch("http://localhost:5001/statusOfPatient", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("Entry successful!");
+            document.getElementById("statusOfPatient").reset(); // Reset Form
+            window.location.href = "2.a Type of entry.html"; // Redirect after success
+        } else {
+            alert("Error submitting form: " + (data.error || "Unknown error"));
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Failed to submit. Check console for details.");
+    });
+});
+
+function toggleOtherTest() {
+    let testType = document.getElementById("test_type").value;
+    let otherTestInput = document.getElementById("otherTest");
+
+    if (testType === "Other") {
+        otherTestInput.style.display = "block";
+        otherTestInput.required = true;
+    } else {
+        otherTestInput.style.display = "none";
+        otherTestInput.required = false;
+    }
+}
+
+</script>
+</body>
+</html>

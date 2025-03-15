@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Entry Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            width: 50%;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+            text-align: left;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .submit-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+        .hidden {
+            display: none;
+        }
+        #patientIDDisplay {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Patient Entry</h2>
+        <form id="patientEntryForm">
+
+            <label>Name of Patient *</label>
+            <input type="text" id="patient_name" required>
+
+            <label>Date of Referral *</label>
+            <input type="date" id="date_of_referral" required>
+
+            <label>Unique ID 1 (PES) *</label>
+            <input type="text" id="unique_id_1" required>
+
+            <label>Multiple Referral *</label>
+            <select id="referralType" onchange="toggleUniqueIDs()" required>
+                <option value="Single">Single Agency</option>
+                <option value="Dual">Dual Agency</option>
+                <option value="Triple">Triple Agency</option>
+            </select>
+
+            <div id="uniqueID2Field" class="hidden">
+                <label>Unique ID 2 (PES 2) *</label>
+                <input type="text" id="unique_id_2">
+            </div>
+
+            <div id="uniqueID3Field" class="hidden">
+                <label>Unique ID 3 (PES 3) *</label>
+                <input type="text" id="unique_id_3">
+            </div>
+
+            <button type="button" class="submit-btn" onclick="submitForm()">Submit</button>
+        </form>
+
+        <div id="patientIDDisplay" class="hidden"></div>
+    </div>
+
+    <script>
+        function toggleUniqueIDs() {
+            var referralType = document.getElementById("referralType").value;
+            document.getElementById("uniqueID2Field").classList.toggle("hidden", referralType !== "Dual" && referralType !== "Triple");
+            document.getElementById("uniqueID3Field").classList.toggle("hidden", referralType !== "Triple");
+        }
+    
+        function submitForm() {
+            let formData = {
+                patient_name: document.getElementById("patient_name").value,
+                date_of_referral: document.getElementById("date_of_referral").value,
+                unique_id_1: document.getElementById("unique_id_1").value,
+                referral_type: document.getElementById("referralType").value,
+                unique_id_2: document.getElementById("unique_id_2")?.value || null,
+                unique_id_3: document.getElementById("unique_id_3")?.value || null
+
+            };
+    
+            fetch('http://localhost:5001/patients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.patientId) {
+                    alert("Generated Patient ID: " + data.patientId); // Show Popup
+                    document.getElementById("patientEntryForm").reset(); // Reset Form
+                    window.location.href = "2.a Type of entry.html"; // Redirect after success
+                } else {
+                    alert("Error submitting form!");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    </script>
+    
+
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referral Payment Update</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            width: 50%;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+            text-align: left;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .submit-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Referral Payment Update</h2>
+        <form id="referralPayment">
+
+            <label>Patient ID (as per sheet) (RPU) *</label>
+            <input type="number" id="patient_id" required>
+
+            <label>Date of Payment *</label>
+            <input type="date" id="date_of_payment" required>
+
+            <label>Unique ID 1 (RPU) *</label>
+            <select id="payment_status_1" required>
+                <option value="Incomplete">Incomplete</option>
+                <option value="Complete">Complete</option>
+                <option value="Partially Paid">Partially Paid</option>
+            </select>
+
+            <label>Paid Amount (RPU 1) *</label>
+            <input type="number" id="paid_amount_1" required>
+
+            <label>Type of Payment *</label>
+            <select id="payment_type" onchange="togglePaymentFields()" required>
+                <option value="Single">Single</option>
+                <option value="Dual">Dual</option>
+                <option value="Triple">Triple</option>
+            </select>
+
+            <div id="paidAmount2Field" class="hidden">
+                <label>Unique ID 2 (RPU) *</label>
+                <select id="payment_status_2">
+                    <option value="Incomplete">Incomplete</option>
+                    <option value="Complete">Complete</option>
+                    <option value="Partially Paid">Partially Paid</option>
+                </select>
+                <label>Paid Amount (RPU 2) *</label>
+                <input type="number" id="paid_amount_2">
+            </div>
+
+            <div id="paidAmount3Field" class="hidden">
+                <label>Unique ID 3 (RPU) *</label>
+                <select id="payment_status_3">
+                    <option value="Incomplete">Incomplete</option>
+                    <option value="Complete">Complete</option>
+                    <option value="Partially Paid">Partially Paid</option>
+                </select>
+                <label>Paid Amount (RPU 3) *</label>
+                <input type="number" id="paid_amount_3">
+            </div>
+
+            <button type="submit" class="submit-btn">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        function togglePaymentFields() {
+            var paymentType = document.getElementById("payment_type").value;
+            var paidAmount2Field = document.getElementById("paidAmount2Field");
+            var paidAmount3Field = document.getElementById("paidAmount3Field");
+
+            if (paymentType === "Dual") {
+                paidAmount2Field.classList.remove("hidden");
+                paidAmount3Field.classList.add("hidden");
+                document.getElementById("paid_amount_3").value = ""; // Clear field
+            } else if (paymentType === "Triple") {
+                paidAmount2Field.classList.remove("hidden");
+                paidAmount3Field.classList.remove("hidden");
+            } else {
+                paidAmount2Field.classList.add("hidden");
+                paidAmount3Field.classList.add("hidden");
+                document.getElementById("paid_amount_2").value = ""; // Clear field
+                document.getElementById("paid_amount_3").value = ""; // Clear field
+            }
+        }
+
+        document.getElementById("referralPayment").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent page refresh
+
+            let formData = {
+                patient_id: document.getElementById("patient_id").value,
+                date_of_payment: document.getElementById("date_of_payment").value,
+                payment_status_1: document.getElementById("payment_status_1").value,
+                paid_amount_1: document.getElementById("paid_amount_1").value,
+                payment_type: document.getElementById("payment_type").value,
+                payment_status_2: document.getElementById("payment_status_2")?.value || "N/A",
+                paid_amount_2: document.getElementById("paid_amount_2")?.value || 0,
+                payment_status_3: document.getElementById("payment_status_3")?.value || "N/A",
+                paid_amount_3: document.getElementById("paid_amount_3")?.value || 0
+            };
+
+            fetch("http://localhost:5001/referralPayment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Referral Payment Updated Successfully!");
+                    document.getElementById("referralPayment").reset(); // Reset form
+                    window.location.href = "2.a Type of entry.html"; // Redirect after success
+                } else {
+                    alert("Error submitting form: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Failed to submit. Check console for details.");
+            });
+        });
+    </script>
+
+</body>
+</html>

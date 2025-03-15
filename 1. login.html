@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f3f4f6;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .error {
+            border-color: red;
+        }
+        .error-message {
+            color: red;
+            font-size: 12px;
+            display: none;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script>
+        function validatePassword(event) {
+            event.preventDefault();
+            let passwordInput = document.getElementById("password");
+            let errorMessage = document.getElementById("error-message");
+            
+            if (passwordInput.value.length < 6) {
+                passwordInput.classList.add("error");
+                errorMessage.style.display = "block";
+            } else {
+                passwordInput.classList.remove("error");
+                errorMessage.style.display = "none";
+                alert("Sign-in successful!");
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Sign In</h2>
+        <form onsubmit="validatePassword(event)">
+            <input type="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <p id="error-message" class="error-message">Password must be at least 6 characters long</p>
+            <button type="submit">Sign In</button>
+        </form>
+    </div>
+</body>
+</html>

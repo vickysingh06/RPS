@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Admit Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            width: 50%;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+            text-align: left;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .submit-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Patient Admit Confirmation</h2>
+        <form id="patientAdmitForm">
+            <label>Patient ID (as per sheet) (PAC) *</label>
+            <input type="number" id="patient_id" required>
+
+            <label>Date of Admission *</label>
+            <input type="date" id="date_of_admission" required>
+
+            <label>Status of Admission *</label>
+            <select id="admission_status" required>
+                <option value="Admitted">Admitted</option>
+                <option value="DPV">DPV</option>
+                <option value="Visited but Not Admitted">Visited but Not Admitted</option>
+                <option value="Admitted but Late Intimation">Admitted but Late Intimation</option>
+                <option value="Not Visited">Not Visited</option>
+            </select>
+
+            <button type="submit" class="submit-btn">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById("patientAdmitForm").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent page refresh
+
+            let formData = {
+                patient_id: document.getElementById("patient_id").value,
+                date_of_admission: document.getElementById("date_of_admission").value,
+                admission_status: document.getElementById("admission_status").value,
+            };
+
+            fetch("http://localhost:5001/patientAdmitform", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Entry successful!");
+                    document.getElementById("patientAdmitForm").reset(); // Reset Form
+                    window.location.href = "2.a Type of entry.html"; // Redirect after success
+                } else {
+                    alert("Error submitting form: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Failed to submit. Check console for details.");
+            });
+        });
+    </script>
+
+</body>
+</html>
