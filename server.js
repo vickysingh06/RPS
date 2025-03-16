@@ -248,6 +248,7 @@ app.post("/patients", async (req, res) => {
         console.error("❌ Error inserting patient:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
+    
 });
 
 /**
@@ -298,18 +299,25 @@ app.post("/patientAdmitform", async (req, res) => {
 /**
  * 3️⃣ Patient Status Update
  */
+
 app.post("/statusOfPatient", async (req, res) => {
     try {
         const { patient_id, admitted_to, department, type_admission, type_test, bill_amount } = req.body;
 
+       // ✅ Validate required fields
         if (!patient_id || !admitted_to || !department || !type_admission || !type_test || !bill_amount) {
-            return res.status(400).json({ error: "Missing required fields" });
+            return res.status(400).json({ error: "❌ Missing required fields" });
         }
 
+        // ✅ Connect to the database
         const pool = await sql.connect(dbConfig);
 
         try {
-            // Check if patient exists
+
+            
+            
+
+            // ✅ Check if patient exists in `patientadmitconfirm`
             const checkPatient = await pool.request()
                 .input("PatientID", sql.Int, patient_id)
                 .query("SELECT TOP 1 PatientID FROM patientadmitconfirm WHERE PatientID = @PatientID");
@@ -317,24 +325,139 @@ app.post("/statusOfPatient", async (req, res) => {
             if (checkPatient.recordset.length === 0) {
                 return res.status(404).json({ error: "❌ Patient Entry Pending" });
             }
-                // Same table data check 
-                
-            // Insert Patient Status Data
+            
+            // ✅ Insert Patient Status Data
             await pool.request()
                 .input("PatientID", sql.Int, patient_id)
                 .input("AdmittedTo", sql.NVarChar, admitted_to)
                 .input("Department", sql.NVarChar, department)
                 .input("TypeAdmission", sql.NVarChar, type_admission)
                 .input("TypeTest", sql.NVarChar, type_test)
-                .input("BillAmount", sql.Decimal(10, 2), bill_amount)
+                .input("BillAmount", sql.Decimal(10, 2), parseFloat(bill_amount)) // ✅ Ensure valid decimal value
                 .query(`
                     INSERT INTO Status (PatientID, AdmittedTo, Department, TypeofAdmission, TypeofTest, BillAmount) 
                     VALUES (@PatientID, @AdmittedTo, @Department, @TypeAdmission, @TypeTest, @BillAmount)
                 `);
+            
+            // ✅ Fetch referred doctor's district
+            let ReferredDoctorResult = await pool.request()
+                .input("PatientID", sql.Int, patient_id)
+                .query(`
+                    SELECT dbo.Dr.District
+                    FROM dbo.PatientEntry 
+                    INNER JOIN dbo.Status ON dbo.PatientEntry.PatientID = dbo.Status.PatientID 
+                    INNER JOIN dbo.Dr ON dbo.PatientEntry.UniqueID1 = dbo.Dr.[SR# NO#]
+                    WHERE dbo.Status.PatientID = @PatientID
+                `);
 
-            res.json({ success: true, message: "✅ Patient status updated successfully" });
+            console.log("Full Query Result:", ReferredDoctorResult);
+            console.log("Recordset:", ReferredDoctorResult.recordset);
+
+            // ✅ Safely extract first result
+            let ReferredDoctorDistrict = ReferredDoctorResult.recordset.length > 0 
+                ? ReferredDoctorResult.recordset[0].District 
+                : null;
+            console.log(`ReferredDoctorDistrict: ${ReferredDoctorDistrict}`);
+            console.log(`Admitted To: ${admitted_to}`);
+            
+
+            // ✅ Initialize `PrimaryAgencyRefferedLocation`
+            let PrimaryAgencyRefferedLocation = "";
+
+            // ✅ Determine `PrimaryAgencyRefferedLocation`
+            if (ReferredDoctorDistrict === "Dhanbad" && (admitted_to === "Asarfi Hospital Dhanbad" || admitted_to === "Asarfi Cancer Institute")) {
+                PrimaryAgencyRefferedLocation = "Dhanbad";
+            } else if (ReferredDoctorDistrict !== "Dhanbad" && (admitted_to === "Asarfi Hospital Dhanbad" || admitted_to === "Asarfi Cancer Institute")) {
+                PrimaryAgencyRefferedLocation = "Outside Dhanbad";
+            } else if (ReferredDoctorDistrict === "Ballia" && admitted_to === "Asarfi Hospital Ballia") {
+                PrimaryAgencyRefferedLocation = "Ballia";
+            } else if (ReferredDoctorDistrict !== "Ballia" && admitted_to === "Asarfi Hospital Ballia") {
+                PrimaryAgencyRefferedLocation = "Outside Ballia";
+            }
+
+            console.log(`PrimaryAgencyRefferedLocation: ${PrimaryAgencyRefferedLocation}`);
+
+            //Update Reffer Location
+            await pool.request()
+                .input("PatientID", sql.Int, patient_id)
+                .input("PrimaryAgencyRefferedLocation", sql.NVarChar, PrimaryAgencyRefferedLocation)
+                .query(`
+                    UPDATE Status SET  PrimaryAgencyRefferedLocation =  @PrimaryAgencyRefferedLocation
+                    WHERE PatientID= @PatientID
+                `);
+                let ReferralType = "";
+                let BillAmount = "";
+                let Department = "";
+                let UniqueID1 = "";
+                let UniqueID2 = "";
+                let UniqueID3 = "";
+                let StatusofAdmission = "";
+                let Grade = "";
+            const GetPatientinputData = await pool.request()
+            .input("PatientID", sql.Int, patient_id)
+            .query(`SELECT [ReferralType],[BillAmount],[Department],[UniqueID1],[UniqueID2],[UniqueID3],[StatusofAdmission],[Grade] FROM [Refpay].[dbo].[RefferalPaymentPatientData]
+                    WHERE PatientID = @PatientID`);
+                    console.log(`GetPatientinputData: ${GetPatientinputData.recordset}`);
+                    if (GetPatientinputData.recordset.length > 0) {
+                        const row = GetPatientinputData.recordset[0];
+                        ReferralType=row.ReferralType;
+                        BillAmount=row.BillAmount;
+                        Department=row.Department;
+                        UniqueID1=row.UniqueID1;
+                        UniqueID2=row.UniqueID2;
+                        UniqueID3=row.UniqueID3;
+                        StatusofAdmission=row.StatusofAdmission;
+                        Grade=row.Grade;
+                        console.log("Patient Input data retreival sucess");
+                    }
+                    else {
+                        console.log("No records found.");
+                    }
+                    console.log(`ReferralType: ${ReferralType}`);
+                    if (ReferralType === "Single"){
+                        const query1=`SELECT [ReffralAmount],[% if Any] FROM [Refpay].[dbo].[Refpaymaster] WHERE [TypeofAgency]='Single' AND [AgencyLocation]='${PrimaryAgencyRefferedLocation}' AND [TypeofAdmission]='${type_admission}' AND [AdmittedStatus] ='${StatusofAdmission}' AND [GradeofAgency] ='${Grade}' AND  [Department]='${Department}'`;
+                        console.log(`query is  ${query1} `);
+                        const GetSingleRefferalAmountData = await pool.request()
+                        .input("PrimaryAgencyRefferedLocation", sql.NVarChar, PrimaryAgencyRefferedLocation)
+                        .input("type_admission", sql.NVarChar, type_admission)
+                        .input("StatusofAdmission", sql.NVarChar, StatusofAdmission)
+                        .input("Grade", sql.NVarChar, Grade)
+                        .input("Department", sql.NVarChar, Department)
+                        .query(query1);
+                        
+                        if (GetSingleRefferalAmountData.recordset.length > 0) {
+                                    const row = GetPatientinputData.recordset[0];
+                                    ReffralAmount=row.column1;
+                                    DiscountPercent=row.column2;
+                                    
+                                    console.log(`ReffralAmount: ${ReffralAmount}, DiscountPercent: ${DiscountPercent} , resultLength ${GetSingleRefferalAmountData.recordset.length}`);
+
+                                }
+                                else {
+                                    console.log(` No records found.`);
+                                }
+                        
+                        //Insert amount in calpay
+                                QueryInsertCalpay =`INSERT INTO [dbo].[calpay]([PatientID],[ReffralAmount1],[UniqueID1])
+                        VALUES
+                              (${PatientID},${ReffralAmount},${UniqueID1})`
+                        console.log(`QueryInsertCalpay is  ${QueryInsertCalpay} `);
+                              await pool.request()
+                        .input("PatientID", sql.Int, PatientID)
+                        .input("ReffralAmount", sql.NVarChar, ReffralAmount)
+                        .input("UniqueID1", sql.NVarChar, UniqueID1)
+                        .query(QueryInsertCalpay);
+                    }
+                    else if (ReferralType === "Double"){
+
+                    }
+                    else if (ReferralType === "Triple"){
+                        
+                    }
+            res.status(201).json({ success: true, message: "✅ Patient status updated successfully" });
+
         } finally {
-            await pool.close();
+            await pool.close(); // ✅ Ensure DB connection is closed
         }
 
     } catch (error) {
@@ -342,6 +465,78 @@ app.post("/statusOfPatient", async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
+
+// app.post("/statusOfPatient", async (req, res) => {
+//     try {
+//         const { patient_id, admitted_to, department, type_admission, type_test, bill_amount } = req.body;
+
+//         if (!patient_id || !admitted_to || !department || !type_admission || !type_test || !bill_amount) {
+//             return res.status(400).json({ error: "Missing required fields" });
+//         }
+
+//         const pool = await sql.connect(dbConfig);
+
+//         try {
+//             // Check if patient exists
+//             const checkPatient = await pool.request()
+//                 .input("PatientID", sql.Int, patient_id)
+//                 .query("SELECT TOP 1 PatientID FROM patientadmitconfirm WHERE PatientID = @PatientID");
+
+//             if (checkPatient.recordset.length === 0) {
+//                 return res.status(404).json({ error: "❌ Patient Entry Pending" });
+//             }
+//                 // Same table data check 
+//                 let RefferdDoctorResult = await pool.request().input("PatientID", sql.Int, patient_id).query(`
+//                     SELECT        dbo.Dr.District
+//                     FROM            dbo.PatientEntry INNER JOIN
+//                          dbo.Status ON dbo.PatientEntry.PatientID = dbo.Status.PatientID INNER JOIN
+//                          dbo.Dr ON dbo.PatientEntry.UniqueID1 = dbo.Dr.[SR# NO#]
+//                     WHERE        (dbo.Status.PatientID = @PatientID)
+//                   `);
+//                   console.log("Full Query Result:", RefferdDoctorResult);
+//                   console.log("Recordset:", RefferdDoctorResult.recordset);
+//                  // Store result in a variable
+//                 let ReferredDoctorDistrict = RefferdDoctorResult.recordset[0].District;
+
+//                  console.log(`ReferredDoctorDistrict: ${ReferredDoctorDistrict}`);
+//                     console.log(`admitted_to: ${admitted_to}`);
+//                   //Set refferd Location
+//                   if (ReferredDoctorDistrict === "Dhanbad" && (admitted_to === "Asarfi Hospital Dhanbad" || admitted_to === "Asarfi Cancer Institute")) {
+//                     PrimaryAgencyRefferedLocation = "Dhanbad";
+//                   } else if (ReferredDoctorDistrict !== "Dhanbad" && (admitted_to === "Asarfi Hospital Dhanbad" || admitted_to === "Asarfi Cancer Institute")) {
+//                     PrimaryAgencyRefferedLocation = "Outside Dhanbad";
+//                   } else if (ReferredDoctorDistrict === "Ballia" && admitted_to === "Asarfi Hospital Ballia") {
+//                     PrimaryAgencyRefferedLocation = "Ballia";
+//                   } else if (ReferredDoctorDistrict !== "Ballia" && admitted_to === "Asarfi Hospital Ballia") {
+//                     PrimaryAgencyRefferedLocation = "Outside Ballia";
+//                   }
+                  
+
+
+//             // Insert Patient Status Data
+//             await pool.request()
+//                 .input("PatientID", sql.Int, patient_id)
+//                 .input("AdmittedTo", sql.NVarChar, admitted_to)
+//                 .input("Department", sql.NVarChar, department)
+//                 .input("TypeAdmission", sql.NVarChar, type_admission)
+//                 .input("TypeTest", sql.NVarChar, type_test)
+//                 .input("BillAmount", sql.Decimal(10, 2), bill_amount)
+//                 .input("PrimaryAgencyRefferedLocation",sql.NVarChar, PrimaryAgencyRefferedLocation)
+//                 .query(`
+//                     INSERT INTO Status (PatientID, AdmittedTo, Department, TypeofAdmission, TypeofTest, BillAmount,PrimaryAgencyRefferedLocation ) 
+//                     VALUES (@PatientID, @AdmittedTo, @Department, @TypeAdmission, @TypeTest, @BillAmount, @PrimaryAgencyRefferedLocation)
+//                 `);
+
+//             res.json({ success: true, message: "✅ Patient status updated successfully" });
+//         } finally {
+//             await pool.close();
+//         }
+
+//     } catch (error) {
+//         console.error("❌ Error updating patient status:", error);
+//         res.status(500).json({ error: "Internal Server Error" });
+//     }
+// });
 
 /**
  * 4️⃣ Referral Payment Entry
